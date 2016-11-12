@@ -1,36 +1,39 @@
-Using the khmer recipes for characterization of metagenomic samples
-===================================================================
+#Extract reads by coverage 
 
-Goal: To characterize metagenomic samples using khmer
+	~/khmer/khmer/scripts/load-into-counting.py -x 1e8 -k 20 ecoli_reads.ct \
+	../seqs/ecoli_ref-5m.fastq.gz
 
-Notes: For this I will use an e.coli metgenomic dataset provided by Sherine Awad 
 
-----------------------------------------------------------------------------
-
-Downloading khmer in a virualenv using git clone: 
-
--------------------------------------------------
-
-mkdir khmer 
-cd khmer 
-conda create -n khmer python=2.7 anaconda
-
---------------------------------------------------
-
-To generate a k-mer spectrum with from my genome using k=20: 
-
-	~/khmer/khmer/scripts/load-into-counting.py -x 1e8 -k 20 reads.kh ../seqs/ecoli_ref-5m.fastq.gz
-
-	~/khmer/khmer/scripts/abundance-dist.py -s reads.kh ../seqs/ecoli_ref-5m.fastq.gz reads.dist
-
-To generate a read coverage spectrum execute the following command:
-
-	~/khmer/khmer/sandbox/calc-median-distribution.py reads.kh ../seqs/ecoli_ref-5m.fastq.gz reads-cov.dist
+	~/khmer/khmer/scripts/abundance-dist.py ecoli_reads.ct ../seqs/ecoli_ref-5m.fastq.gz \
+	ecoli_reads.hist
 	
-Now lets grab the reads with coverage between 50 and 200x coverage and put them in reads-genome.fa
+#Estimate metagenome size from unassembled reads 
 
-	~/khmer/khmer/sandbox/slice-reads-by-coverage.py reads.kh ../seqs/ecoli_ref-5m.fastq.gz reads-genome.fa -m 50 -M 200
+	~/khmer/khmer/scripts/normalize-by-median.py -k 20 -C 10 -x 1e8 -R metagenome_size_report.txt \
+	 ../seqs/ecoli_ref-5m.fastq.gz 
+	
+	~/khmer/khmer/scripts/estimate-genome-size.py -C 20 -k 20 ecoli_ref-5m.fastq.gz.keep metagenome_size_report.txt
+	
+#Estimate saturation of sequencing
 
-Not lets grab all of the in abundance greater than 200 (i.e. repeats) and put them in reads-repeats.fa
+	~/khmer/khmer/sandbox/saturate-by-median.py -x 1e8 -k 20 -C 5 -R saturation_report.txt --report-frequency 10 \
+	../seqs/ecoli_ref-5m.fastq.gz
+	
+#Error-trim reads
+	~/khmer/khmer/scripts/load-into-counting.py -x 1e8 -k 20 ecoli_reads.kh \
+	../seqs/ecoli_ref-5m.fastq.gz
+	~/khmer/khmer/scripts/abundance-dist.py -s ecoli_reads.kh ../seqs/ecoli_ref-5m.fastq.gz ecoli_reads.dist
+	~/khmer/khmer/scripts/trim-low-abund.py -x 1e8 -k 20 ../seqs/ecoli_ref-5m.fastq.gz
+	
+#Trim metagenome and transcriptome reads with variable coverage k-mer trimming
+	~/khmer/khmer/scripts/trim-low-abund.py -x 1e8 -k 20 -V ../seqs/ecoli_ref-5m.fastq.gz
+	~/khmer/khmer/scripts/load-into-counting.py -x 1e8 -k 20 ecoli_reads-trim.kh ecoli_ref-5m.fastq.gz.abundtrim
+	~/khmer/khmer/scripts/abundance-dist.py -s ecoli_reads-trim.kh ecoli_ref-5m.fastq.gz.abundtrim ecoli_reads-trim.dist
 
-	~/khmer/khmer/sandbox/slice-reads-by-coverage.py reads.kh ../seqs/ecoli_ref-5m.fastq.gz reads-repeats.fa -m 200
+	
+
+
+	 
+
+
+	
